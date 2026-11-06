@@ -1,5 +1,8 @@
 package com.eventostec.api.adapters.outbound.storage;
 
+import com.eventostec.api.domain.image.ImageFile;
+import com.eventostec.api.domain.image.ImageUploadException;
+import com.eventostec.api.domain.image.ImageUploaderPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,23 +29,17 @@ public class ImageUploaderAdapter implements ImageUploaderPort {
     private final S3Client s3Client;
 
     @Override
-    public String uploadImage(MultipartFile multipartFile) {
-        String filename = UUID.randomUUID() + "-" + multipartFile.getOriginalFilename();
-
+    public String uploadImage(ImageFile image) {
+        String filename = UUID.randomUUID() + "-" + image.originalName();
         try {
             PutObjectRequest putOb = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(filename)
-                    .build();
-            s3Client.putObject(putOb, RequestBody.fromByteBuffer(ByteBuffer.wrap(multipartFile.getBytes())));
-            GetUrlRequest request = GetUrlRequest.builder()
-                    .bucket(bucketName)
-                    .key(filename)
-                    .build();
+                    .bucket(bucketName).key(filename).contentType(image.contentType()).build();
+            s3Client.putObject(putOb, RequestBody.fromBytes(image.content()));
+            GetUrlRequest request = GetUrlRequest.builder().bucket(bucketName).key(filename).build();
             return s3Client.utilities().getUrl(request).toString();
         } catch (Exception e) {
             log.error("erro ao subir arquivo: {}", e.getMessage());
-            return "";
+            throw new ImageUploadException("Falha ao enviar imagem", e);
         }
     }
 }

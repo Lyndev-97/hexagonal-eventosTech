@@ -1,13 +1,11 @@
 package com.eventostec.api.domain.event;
 
-import org.springframework.data.domain.Page;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 // Essa classe é como se fosse a porta na arquitetura hexagonal.
-public interface EventRepository {
+public interface EventRepositoryPort {
 
     Event save(Event event);
 
@@ -17,7 +15,7 @@ public interface EventRepository {
 
     void deleteById(UUID id);
 
-    Page<EventAddressProjection> findUpcomingEvents(int page, int size);
-    Page<EventAddressProjection> findFilteredEvents(String city, String uf, Date startDate, Date endDate, int page, int size);
+    List<EventAddressProjection> findUpcomingEvents(int page, int size);
+    List<EventAddressProjection> findFilteredEvents(String city, String uf, Date startDate, Date endDate, int page, int size);
     List<EventAddressProjection> findEventsByTitle(String title);
 }

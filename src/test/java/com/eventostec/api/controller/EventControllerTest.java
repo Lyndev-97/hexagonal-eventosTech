@@ -2,9 +2,9 @@ package com.eventostec.api.controller;
 
 import com.eventostec.api.adapters.inbound.controller.EventController;
 import com.eventostec.api.domain.event.Event;
-import com.eventostec.api.domain.event.EventDetailsDTO;
-import com.eventostec.api.domain.event.EventRequestDTO;
-import com.eventostec.api.domain.event.EventResponseDTO;
+import com.eventostec.api.adapters.inbound.dto.EventDetailsDTO;
+import com.eventostec.api.adapters.inbound.dto.EventRequestDTO;
+import com.eventostec.api.adapters.inbound.dto.EventResponseDTO;
 import com.eventostec.api.application.service.EventServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;

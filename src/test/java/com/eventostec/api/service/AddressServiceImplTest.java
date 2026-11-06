@@ -1,22 +1,5 @@
 package com.eventostec.api.service;
 
-import com.eventostec.api.application.service.AddressServiceImpl;
-import com.eventostec.api.domain.address.Address;
-import com.eventostec.api.domain.event.Event;
-import com.eventostec.api.domain.event.EventRequestDTO;
-import com.eventostec.api.adapters.outbound.repositories.AddressRepositoryImpl;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 class AddressServiceImplTest {
 /*
     @Mock

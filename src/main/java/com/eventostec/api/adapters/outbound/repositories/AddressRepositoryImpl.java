@@ -2,6 +2,7 @@ package com.eventostec.api.adapters.outbound.repositories;
 
 import com.eventostec.api.adapters.outbound.entities.AddressEntity;
 import com.eventostec.api.adapters.outbound.repositories.jpa.JpaAddressRepository;
+import com.eventostec.api.adapters.outbound.repositories.mapper.PersistenceMapper;
 import com.eventostec.api.domain.address.Address;
 import com.eventostec.api.domain.address.AddressRepositoryPort;
 import org.springframework.stereotype.Repository;
@@ -12,6 +13,7 @@ import java.util.UUID;
 @Repository
 public class AddressRepositoryImpl implements AddressRepositoryPort {
     private final JpaAddressRepository jpaAddressRepository;
+    //private final EventMapper mapper;
 
     public AddressRepositoryImpl(JpaAddressRepository jpaAddressRepository) {
         this.jpaAddressRepository = jpaAddressRepository;
@@ -19,13 +21,11 @@ public class AddressRepositoryImpl implements AddressRepositoryPort {
 
     @Override
     public Optional<Address> findByEventId(UUID eventId) {
-        return jpaAddressRepository.findByEventId(eventId);
+        return jpaAddressRepository.findByEventId(eventId).map(PersistenceMapper::toDomain);
     }
 
     @Override
     public Address save(Address address) {
-        AddressEntity entity = new AddressEntity(address);
-        this.jpaAddressRepository.save(entity);
-        return new Address(entity.getId(), entity.getCity(), entity.getUf(), entity.getEvent());
+        return PersistenceMapper.toDomain(jpaAddressRepository.save(new AddressEntity(address)));
     }
 }

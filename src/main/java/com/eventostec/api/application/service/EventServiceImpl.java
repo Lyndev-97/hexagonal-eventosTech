@@ -1,16 +1,14 @@
 package com.eventostec.api.application.service;
 
-import com.eventostec.api.adapters.outbound.storage.ImageUploaderPort;
-import com.eventostec.api.application.usercases.AddressUseCases;
-import com.eventostec.api.application.usercases.CouponUseCases;
-import com.eventostec.api.application.usercases.EventUseCases;
+import com.eventostec.api.application.InvalidAdminKeyException;
+import com.eventostec.api.application.usecases.*;
 import com.eventostec.api.domain.address.Address;
 import com.eventostec.api.domain.coupon.Coupon;
-import com.eventostec.api.domain.event.*;
-import com.eventostec.api.utils.mappers.EventMapper;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import com.eventostec.api.domain.event.Event;
+import com.eventostec.api.domain.event.EventAddressProjection;
+import com.eventostec.api.domain.event.EventNotFoundException;
+import com.eventostec.api.domain.event.EventRepositoryPort;
+import com.eventostec.api.domain.image.ImageUploaderPort;
 
 import java.util.Date;
 import java.util.List;
@@ -21,8 +19,8 @@ public class EventServiceImpl implements EventUseCases {
 
 
     private String adminKey;
-    private EventMapper mapper;
-    private final EventRepository repository;
+    //private EventMapper mapper;
+    private final EventRepositoryPort repository;
     private final ImageUploaderPort imageUploader;
 
     //private final AddressServiceImpl addressServiceImpl;
@@ -34,39 +32,42 @@ public class EventServiceImpl implements EventUseCases {
 
     public EventServiceImpl(AddressUseCases addressUseCases,
                             CouponUseCases couponUseCases,
-                            EventRepository repository,
+                            EventRepositoryPort repository,
                             ImageUploaderPort imageUploader,
-                            EventMapper mapper,
+                           // EventMapper mapper,
                             String adminKey){
         this.addressUseCases = addressUseCases;
         this.couponUseCases = couponUseCases;
         this.repository = repository;
         this.imageUploader = imageUploader;
-        this.mapper = mapper;
+        //this.mapper = mapper;
         this.adminKey = adminKey;
     }
 
-    public Event createEvent(EventRequestDTO data) {
+    public Event createEvent(CreateEventCommand command) {
         String imgUrl = "";
 
-
-        if (data.image() != null) {
-            imgUrl = imageUploader.uploadImage(data.image());
+        if (command.image() != null) {
+            imgUrl = imageUploader.uploadImage(command.image());
         }
-        Event newEvent = mapper.dtoToEntity(data, imgUrl);
-        repository.save(newEvent);
+        Event newEvent = new Event(null, command.title(), command.description(), imgUrl,
+                command.eventUrl(), command.remote(), command.date());
 
-        if (Boolean.FALSE.equals(data.remote())) {
-            this.addressUseCases.createAddress(data, newEvent);
+        Event saved = repository.save(newEvent);
+
+        if (Boolean.FALSE.equals(command.remote())) {
+            addressUseCases.createAddress(command.city(), command.state(), saved);
         }
-
-        return newEvent;
+        return saved;
     }
 
-    public List<EventResponseDTO> getUpcomingEvents(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Page<EventAddressProjection> eventsPage = this.repository.findUpcomingEvents(page, size);
-        return eventsPage.map(event -> new EventResponseDTO(
+    public List<EventAddressProjection> getUpcomingEvents(int page, int size) {
+
+        return repository.findUpcomingEvents(page, size);
+
+        /*
+        return this.repository.findUpcomingEvents(page, size).stream().map(
+                event -> new EventResponseDTO(
                         event.getId(),
                         event.getTitle(),
                         event.getDescription(),
@@ -76,32 +77,33 @@ public class EventServiceImpl implements EventUseCases {
                         event.getRemote(),
                         event.getEventUrl(),
                         event.getImgUrl())
-                )
-                .stream().toList();
+        ).toList();
+        */
     }
 
-    public EventDetailsDTO getEventDetails(UUID eventId) {
+    public EventDetails getEventDetails(UUID eventId) {
         Event event = repository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Event not found"));
+                .orElseThrow(() -> new EventNotFoundException(eventId));
 
         Optional<Address> address = addressUseCases.findByEventId(eventId);
         List<Coupon> coupons = couponUseCases.consultCoupons(eventId, new Date());
 
-        return mapper.domainToDetailsDto(event, address, coupons);
+        //return mapper.domainToDetailsDto(event, address, coupons);
+        return new EventDetails(event, address, coupons);
     }
 
     public void deleteEvent(UUID eventId, String adminKey){
         if(adminKey == null || !adminKey.equals(this.adminKey)){
-            throw new IllegalArgumentException("Invalid admin key");
+            throw new InvalidAdminKeyException();
         }
 
         this.repository.deleteById(eventId);
 
     }
 
-    public List<EventResponseDTO> searchEvents(String title){
-        title = (title != null) ? title : "";
-
+    public List<EventAddressProjection> searchEvents(String title){
+        return repository.findEventsByTitle(title != null ? title : "");
+        /*
         List<EventAddressProjection> eventsList = this.repository.findEventsByTitle(title);
         return eventsList.stream().map(event -> new EventResponseDTO(
                         event.getId(),
@@ -115,16 +117,19 @@ public class EventServiceImpl implements EventUseCases {
                         event.getImgUrl())
                 )
                 .toList();
+        */
     }
 
-    public List<EventResponseDTO> getFilteredEvents(int page, int size, String city, String uf, Date startDate, Date endDate){
+    public List<EventAddressProjection> getFilteredEvents(int page, int size, String city, String uf, Date startDate, Date endDate){
         city = (city != null) ? city : "";
         uf = (uf != null) ? uf : "";
         startDate = (startDate != null) ? startDate : new Date(0);
         endDate = (endDate != null) ? endDate : new Date();
 
-        Page<EventAddressProjection> eventsPage = this.repository.findFilteredEvents(city, uf, startDate, endDate, page, size);
-        return eventsPage.map(event -> new EventResponseDTO(
+        return repository.findFilteredEvents(city, uf, startDate, endDate, page, size);
+        /*
+        return this.repository.findFilteredEvents(city, uf, startDate, endDate, page, size).stream().map(
+                event -> new EventResponseDTO(
                         event.getId(),
                         event.getTitle(),
                         event.getDescription(),
@@ -134,8 +139,8 @@ public class EventServiceImpl implements EventUseCases {
                         event.getRemote(),
                         event.getEventUrl(),
                         event.getImgUrl())
-                )
-                .stream().toList();
+        ).toList();
+        */
     }
 
 

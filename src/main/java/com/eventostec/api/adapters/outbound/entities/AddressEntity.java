@@ -27,13 +27,13 @@ public class AddressEntity {
 
     @OneToOne
     @JoinColumn(name = "event_id")
-    private Event event;
+    private EventEntity event;
 
     public AddressEntity(Address address) {
         this.id = address.getId();
         this.city = address.getCity();
         this.uf = address.getUf();
-        this.event = address.getEvent();
+        this.event = new EventEntity(address.getEvent());
     }
 
 

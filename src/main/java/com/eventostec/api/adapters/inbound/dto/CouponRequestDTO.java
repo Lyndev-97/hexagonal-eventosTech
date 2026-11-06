@@ -1,4 +1,4 @@
-package com.eventostec.api.domain.coupon;
+package com.eventostec.api.adapters.inbound.dto;
 
 public record CouponRequestDTO(String code, Integer discount, Long valid) {
 }

@@ -1,11 +1,11 @@
 package com.eventostec.api.adapters.inbound.controller;
 
-import com.eventostec.api.application.usercases.EventUseCases;
+import com.eventostec.api.adapters.inbound.mapper.EventWebMapper;
+import com.eventostec.api.application.usecases.EventUseCases;
 import com.eventostec.api.domain.event.Event;
-import com.eventostec.api.domain.event.EventDetailsDTO;
-import com.eventostec.api.domain.event.EventRequestDTO;
-import com.eventostec.api.domain.event.EventResponseDTO;
-import com.eventostec.api.application.service.EventServiceImpl;
+import com.eventostec.api.adapters.inbound.dto.EventDetailsDTO;
+import com.eventostec.api.adapters.inbound.dto.EventRequestDTO;
+import com.eventostec.api.adapters.inbound.dto.EventResponseDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -22,23 +22,23 @@ import java.util.UUID;
 public class EventController {
 
     private final EventUseCases eventUseCases;
+    private final EventWebMapper webMapper;
 
     @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<Event> create(@Valid @ModelAttribute EventRequestDTO eventRequestDTO) {
-        Event newEvent = this.eventUseCases.createEvent(eventRequestDTO);
-        return ResponseEntity.ok(newEvent);
+    public ResponseEntity<EventResponseDTO> create(@Valid @ModelAttribute EventRequestDTO dto) {
+        Event newEvent = this.eventUseCases.createEvent(webMapper.toCommand(dto));
+        return ResponseEntity.ok(webMapper.toCreatedResponse(newEvent, dto.city(), dto.state()));
     }
 
     @GetMapping("/{eventId}")
     public ResponseEntity<EventDetailsDTO> getEventDetails(@PathVariable UUID eventId) {
-        EventDetailsDTO eventDetails = eventUseCases.getEventDetails(eventId);
-        return ResponseEntity.ok(eventDetails);
+        return ResponseEntity.ok(webMapper.toDetailsDto(eventUseCases.getEventDetails(eventId)));
     }
 
     @GetMapping
-    public ResponseEntity<List<EventResponseDTO>> getEvents(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
-        List<EventResponseDTO> allEvents = this.eventUseCases.getUpcomingEvents(page, size);
-        return ResponseEntity.ok(allEvents);
+    public ResponseEntity<List<EventResponseDTO>> getEvents(@RequestParam(defaultValue = "0") int page,
+                                                            @RequestParam(defaultValue = "10") int size){
+        return ResponseEntity.ok(eventUseCases.getUpcomingEvents(page, size).stream().map(webMapper::toResponse).toList());
     }
 
     @GetMapping("/filter")
@@ -48,14 +48,13 @@ public class EventController {
                                                                     @RequestParam String uf,
                                                                     @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
                                                                     @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
-        List<EventResponseDTO> events = eventUseCases.getFilteredEvents(page, size, city, uf, startDate, endDate);
-        return ResponseEntity.ok(events);
+        return ResponseEntity.ok(eventUseCases.getFilteredEvents(page, size, city, uf, startDate, endDate).stream().map(webMapper::toResponse).toList());
+
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<EventResponseDTO>> getSearchEvents(@RequestParam String title) {
-        List<EventResponseDTO> events = eventUseCases.searchEvents(title);
-        return ResponseEntity.ok(events);
+        return ResponseEntity.ok(eventUseCases.searchEvents(title).stream().map(webMapper::toResponse).toList());
     }
 
     @DeleteMapping("/{eventId}")

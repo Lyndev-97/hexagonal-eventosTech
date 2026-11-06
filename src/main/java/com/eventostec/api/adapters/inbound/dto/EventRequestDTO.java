@@ -1,4 +1,4 @@
-package com.eventostec.api.domain.event;
+package com.eventostec.api.adapters.inbound.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;

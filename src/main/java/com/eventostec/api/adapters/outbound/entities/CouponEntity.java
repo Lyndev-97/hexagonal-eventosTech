@@ -35,6 +35,6 @@ public class CouponEntity {
         this.code = coupon.getCode();
         this.discount = coupon.getDiscount();
         this.valid = coupon.getValid();
-        this.event = coupon.getEvent();
+        this.event = new EventEntity(coupon.getEvent());
     }
 }

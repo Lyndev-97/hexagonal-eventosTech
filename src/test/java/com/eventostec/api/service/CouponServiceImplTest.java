@@ -3,9 +3,9 @@ package com.eventostec.api.service;
 import com.eventostec.api.application.service.CouponServiceImpl;
 import com.eventostec.api.domain.coupon.Coupon;
 import com.eventostec.api.domain.coupon.CouponRepositoryPort;
-import com.eventostec.api.domain.coupon.CouponRequestDTO;
+import com.eventostec.api.adapters.inbound.dto.CouponRequestDTO;
 import com.eventostec.api.domain.event.Event;
-import com.eventostec.api.domain.event.EventRepository;
+import com.eventostec.api.domain.event.EventRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -23,7 +23,7 @@ class CouponServiceImplTest {
     private CouponRepositoryPort couponRepository;
 
     @Mock
-    private EventRepository eventRepository;
+    private EventRepositoryPort eventRepositoryPort;
 
     @InjectMocks
     private CouponServiceImpl couponServiceImpl;
@@ -45,14 +45,14 @@ class CouponServiceImplTest {
         coupon.setValid(new Date(couponData.valid()));
         coupon.setEvent(event);
 
-        when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
+        when(eventRepositoryPort.findById(eventId)).thenReturn(Optional.of(event));
         when(couponRepository.save(any(Coupon.class))).thenReturn(coupon);
 
         Coupon savedCoupon = couponServiceImpl.addCouponToEvent(eventId, couponData);
 
         assertNotNull(savedCoupon);
         assertEquals("TESTCODE", savedCoupon.getCode());
-        verify(eventRepository, times(1)).findById(eventId);
+        verify(eventRepositoryPort, times(1)).findById(eventId);
         verify(couponRepository, times(1)).save(any(Coupon.class));
     }
 
@@ -61,10 +61,10 @@ class CouponServiceImplTest {
         UUID eventId = UUID.randomUUID();
         CouponRequestDTO couponData = new CouponRequestDTO("TESTCODE", 20, new Date().getTime());
 
-        when(eventRepository.findById(eventId)).thenReturn(Optional.empty());
+        when(eventRepositoryPort.findById(eventId)).thenReturn(Optional.empty());
 
         assertThrows(IllegalArgumentException.class, () -> couponServiceImpl.addCouponToEvent(eventId, couponData));
-        verify(eventRepository, times(1)).findById(eventId);
+        verify(eventRepositoryPort, times(1)).findById(eventId);
         verify(couponRepository, never()).save(any(Coupon.class));
     }
 
