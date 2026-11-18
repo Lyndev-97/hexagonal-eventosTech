@@ -1,10 +1,12 @@
 package com.eventostec.api.service;
 
 import com.eventostec.api.application.service.CouponServiceImpl;
+import com.eventostec.api.application.usecases.AddCouponCommand;
 import com.eventostec.api.domain.coupon.Coupon;
 import com.eventostec.api.domain.coupon.CouponRepositoryPort;
 import com.eventostec.api.adapters.inbound.dto.CouponRequestDTO;
 import com.eventostec.api.domain.event.Event;
+import com.eventostec.api.domain.event.EventNotFoundException;
 import com.eventostec.api.domain.event.EventRepositoryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,10 +47,12 @@ class CouponServiceImplTest {
         coupon.setValid(new Date(couponData.valid()));
         coupon.setEvent(event);
 
+        AddCouponCommand command = new AddCouponCommand(couponData.code(), couponData.discount(), new Date(couponData.valid()));
+
         when(eventRepositoryPort.findById(eventId)).thenReturn(Optional.of(event));
         when(couponRepository.save(any(Coupon.class))).thenReturn(coupon);
 
-        Coupon savedCoupon = couponServiceImpl.addCouponToEvent(eventId, couponData);
+        Coupon savedCoupon = couponServiceImpl.addCouponToEvent(eventId, command);
 
         assertNotNull(savedCoupon);
         assertEquals("TESTCODE", savedCoupon.getCode());
@@ -59,11 +63,11 @@ class CouponServiceImplTest {
     @Test
     void test_shouldThrowExceptionWhenEventNotFound() {
         UUID eventId = UUID.randomUUID();
-        CouponRequestDTO couponData = new CouponRequestDTO("TESTCODE", 20, new Date().getTime());
+        AddCouponCommand command = new AddCouponCommand("TESTCODE", 20, new Date());
 
         when(eventRepositoryPort.findById(eventId)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class, () -> couponServiceImpl.addCouponToEvent(eventId, couponData));
+        assertThrows(EventNotFoundException.class, () -> couponServiceImpl.addCouponToEvent(eventId, command));
         verify(eventRepositoryPort, times(1)).findById(eventId);
         verify(couponRepository, never()).save(any(Coupon.class));
     }

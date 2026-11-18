@@ -1,4 +1,4 @@
-package com.eventostec.api.domain.event;
+package com.eventostec.api.adapters.outbound.repositories.jpa;
 
 import java.util.Date;
 import java.util.UUID;

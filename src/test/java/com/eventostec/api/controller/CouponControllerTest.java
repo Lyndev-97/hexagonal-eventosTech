@@ -1,6 +1,7 @@
 package com.eventostec.api.controller;
 
 import com.eventostec.api.adapters.inbound.controller.CouponController;
+import com.eventostec.api.application.usecases.AddCouponCommand;
 import com.eventostec.api.application.usecases.CouponUseCases;
 import com.eventostec.api.domain.coupon.Coupon;
 import com.eventostec.api.adapters.inbound.dto.CouponRequestDTO;
@@ -34,10 +35,12 @@ class CouponControllerTest {
     @Test
     void test_shouldReturnOk() throws Exception {
         UUID eventId = UUID.randomUUID();
-        CouponRequestDTO requestDTO = new CouponRequestDTO("CODE123", 10, new Date().getTime());
+        long validMillis = new Date().getTime();
+        CouponRequestDTO requestDTO = new CouponRequestDTO("CODE123", 10, validMillis);
+        AddCouponCommand command = new AddCouponCommand(requestDTO.code(), requestDTO.discount(), new Date(validMillis));
         Coupon responseCoupon = new Coupon();
 
-        when(couponUseCases.addCouponToEvent(eventId, requestDTO)).thenReturn(responseCoupon);
+        when(couponUseCases.addCouponToEvent(eventId, command)).thenReturn(responseCoupon);
 
         mockMvc.perform(post("/api/coupon/event/{eventId}", eventId)
                         .contentType(MediaType.APPLICATION_JSON)

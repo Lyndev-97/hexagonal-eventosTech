@@ -1,109 +1,166 @@
 package com.eventostec.api.service;
 
+import com.eventostec.api.application.InvalidAdminKeyException;
+import com.eventostec.api.application.service.EventServiceImpl;
+import com.eventostec.api.application.usecases.AddressUseCases;
+import com.eventostec.api.application.usecases.CouponUseCases;
+import com.eventostec.api.application.usecases.CreateEventCommand;
+import com.eventostec.api.application.usecases.EventDetails;
+import com.eventostec.api.domain.event.Event;
+import com.eventostec.api.domain.event.EventNotFoundException;
+import com.eventostec.api.domain.event.EventRepositoryPort;
+import com.eventostec.api.domain.event.EventSummary;
+import com.eventostec.api.domain.image.ImageFile;
+import com.eventostec.api.domain.image.ImageUploaderPort;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+
 class EventServiceImplTest {
-/*
-    @Mock
-    private S3Client s3Client;
 
     @Mock
-    private S3Utilities s3Utilities;
+    private AddressUseCases addressUseCases;
 
     @Mock
-    private AddressService addressService;
+    private CouponUseCases couponUseCases;
 
     @Mock
-    private CouponService couponService;
+    private EventRepositoryPort repository;
 
     @Mock
-    private JpaEventRepository repository;
+    private ImageUploaderPort imageUploaderPort;
 
-    @InjectMocks
     private EventServiceImpl eventServiceImpl;
 
     private final String adminKey = "test-admin-key";
-    private final String bucketName = "test-bucket";
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        eventServiceImpl = new EventServiceImpl(s3Client, addressService, couponService, repository);
-        // Configurando valores diretamente nos atributos usando ReflectionTestUtils
-        ReflectionTestUtils.setField(eventServiceImpl, "adminKey", adminKey);
-        ReflectionTestUtils.setField(eventServiceImpl, "bucketName", bucketName);
-        // Mockando S3Utilities
-        when(s3Client.utilities()).thenReturn(s3Utilities);
+        eventServiceImpl = new EventServiceImpl(addressUseCases, couponUseCases, repository, imageUploaderPort, adminKey);
     }
 
     @Test
-    void test_shouldSaveEvent() {
-        EventRequestDTO requestDTO = new EventRequestDTO("Evento Teste", "Descrição do evento", new Date().getTime(), "Cidade Teste", "UF", true, "https://evento.com", null);
-        Event event = new Event();
+    void test_shouldSaveEventAndCreateAddressWhenNotRemote() {
+        CreateEventCommand command = new CreateEventCommand("Evento Teste", "Descrição do evento", new Date(),
+                "Cidade Teste", "UF", false, "https://evento.com", null);
+        Event savedEvent = new Event(UUID.randomUUID(), command.title(), command.description(), "",
+                command.eventUrl(), command.remote(), command.date());
 
-        when(repository.save(any(Event.class))).thenReturn(event);
+        when(repository.save(any(Event.class))).thenReturn(savedEvent);
 
-        Event savedEvent = eventServiceImpl.createEvent(requestDTO);
+        Event result = eventServiceImpl.createEvent(command);
 
-        assertNotNull(savedEvent);
+        assertNotNull(result);
+        assertEquals(savedEvent.getId(), result.getId());
         verify(repository, times(1)).save(any(Event.class));
+        verify(addressUseCases, times(1)).createAddress(command.city(), command.state(), savedEvent);
+    }
+
+    @Test
+    void test_shouldNotCreateAddressWhenEventIsRemote() {
+        CreateEventCommand command = new CreateEventCommand("Evento Remoto", "Descrição", new Date(),
+                "Cidade Teste", "UF", true, "https://evento.com", null);
+        Event savedEvent = new Event(UUID.randomUUID(), command.title(), command.description(), "",
+                command.eventUrl(), command.remote(), command.date());
+
+        when(repository.save(any(Event.class))).thenReturn(savedEvent);
+
+        eventServiceImpl.createEvent(command);
+
+        verify(addressUseCases, never()).createAddress(any(), any(), any());
+    }
+
+    @Test
+    void test_shouldUploadImageWhenProvided() {
+        ImageFile imageFile = new ImageFile("imagem.jpg", "image/jpeg", new byte[0]);
+        CreateEventCommand command = new CreateEventCommand("Evento Teste", "Descrição", new Date(),
+                "Cidade Teste", "UF", true, "https://evento.com", imageFile);
+        String expectedUrl = "https://s3.amazonaws.com/teste/imagem.jpg";
+
+        when(imageUploaderPort.uploadImage(imageFile)).thenReturn(expectedUrl);
+        when(repository.save(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Event result = eventServiceImpl.createEvent(command);
+
+        assertEquals(expectedUrl, result.getImgUrl());
+        verify(imageUploaderPort, times(1)).uploadImage(imageFile);
     }
 
     @Test
     void test_shouldReturnListOfEvents() {
-        Pageable pageable = PageRequest.of(0, 10);
-        List<EventAddressProjection> events = List.of(mock(EventAddressProjection.class));
-        Page<EventAddressProjection> eventsPage = new PageImpl<>(events);
+        List<EventSummary> events = List.of(new EventSummary(UUID.randomUUID(), "Evento Teste", "Descrição",
+                new Date(), "", "https://evento.com", false, "Cidade Teste", "UF"));
 
-        when(repository.findUpcomingEvents(any(Date.class), eq(pageable))).thenReturn(eventsPage);
+        when(repository.findUpcomingEvents(0, 10)).thenReturn(events);
 
-        List<EventResponseDTO> result = eventServiceImpl.getUpcomingEvents(0, 10);
+        List<EventSummary> result = eventServiceImpl.getUpcomingEvents(0, 10);
 
         assertFalse(result.isEmpty());
-        verify(repository, times(1)).findUpcomingEvents(any(Date.class), eq(pageable));
+        verify(repository, times(1)).findUpcomingEvents(0, 10);
     }
 
     @Test
     void test_shouldReturnEventDetails() {
         UUID eventId = UUID.randomUUID();
-        Event event = new Event();
-        event.setId(eventId);
-        event.setTitle("Teste de evento");
-        event.setDescription("Descrição do evento");
-        event.setDate(new Date());
-        event.setEventUrl("https://evento.com");
+        Event event = new Event(eventId, "Teste de evento", "Descrição do evento", "", "https://evento.com", false, new Date());
 
         when(repository.findById(eventId)).thenReturn(Optional.of(event));
-        when(addressService.findByEventId(eventId)).thenReturn(Optional.empty());
-        when(couponService.consultCoupons(eventId, new Date())).thenReturn(Collections.emptyList());
+        when(addressUseCases.findByEventId(eventId)).thenReturn(Optional.empty());
+        when(couponUseCases.consultCoupons(eq(eventId), any(Date.class))).thenReturn(Collections.emptyList());
 
-        EventDetailsDTO result = eventServiceImpl.getEventDetails(eventId);
+        EventDetails result = eventServiceImpl.getEventDetails(eventId);
 
         assertNotNull(result);
-        assertEquals(eventId, result.id());
+        assertEquals(eventId, result.event().getId());
         verify(repository, times(1)).findById(eventId);
+    }
+
+    @Test
+    void test_shouldThrowExceptionWhenEventNotFoundForDetails() {
+        UUID eventId = UUID.randomUUID();
+        when(repository.findById(eventId)).thenReturn(Optional.empty());
+
+        assertThrows(EventNotFoundException.class, () -> eventServiceImpl.getEventDetails(eventId));
     }
 
     @Test
     void test_shouldDeleteEvent() {
         UUID eventId = UUID.randomUUID();
-        Event event = new Event();
-        event.setId(eventId);
 
-        when(repository.findById(eventId)).thenReturn(Optional.of(event));
-
-        // Use a mesma chave de administrador configurada
         eventServiceImpl.deleteEvent(eventId, adminKey);
 
-        verify(repository, times(1)).delete(event);
+        verify(repository, times(1)).deleteById(eventId);
+    }
+
+    @Test
+    void test_shouldThrowExceptionWhenAdminKeyIsInvalid() {
+        UUID eventId = UUID.randomUUID();
+
+        assertThrows(InvalidAdminKeyException.class, () -> eventServiceImpl.deleteEvent(eventId, "wrong-key"));
+        verify(repository, never()).deleteById(any());
     }
 
     @Test
     void test_shouldReturnMatchingEvents() {
         String title = "Evento Teste";
-        List<EventAddressProjection> events = List.of(mock(EventAddressProjection.class));
+        List<EventSummary> events = List.of(new EventSummary(UUID.randomUUID(), title, "Descrição",
+                new Date(), "", "https://evento.com", false, "Cidade Teste", "UF"));
 
         when(repository.findEventsByTitle(title)).thenReturn(events);
 
-        List<EventResponseDTO> result = eventServiceImpl.searchEvents(title);
+        List<EventSummary> result = eventServiceImpl.searchEvents(title);
 
         assertFalse(result.isEmpty());
         verify(repository, times(1)).findEventsByTitle(title);
@@ -111,30 +168,16 @@ class EventServiceImplTest {
 
     @Test
     void test_shouldReturnFilteredEvents() {
-        Pageable pageable = PageRequest.of(0, 10);
-        List<EventAddressProjection> events = List.of(mock(EventAddressProjection.class));
-        Page<EventAddressProjection> eventsPage = new PageImpl<>(events);
+        List<EventSummary> events = List.of(new EventSummary(UUID.randomUUID(), "Evento Teste", "Descrição",
+                new Date(), "", "https://evento.com", false, "Cidade Teste", "UF"));
+        Date startDate = new Date(0);
+        Date endDate = new Date();
 
-        when(repository.findFilteredEvents(anyString(), anyString(), any(Date.class), any(Date.class), eq(pageable))).thenReturn(eventsPage);
+        when(repository.findFilteredEvents("Cidade Teste", "UF", startDate, endDate, 0, 10)).thenReturn(events);
 
-        List<EventResponseDTO> result = eventServiceImpl.getFilteredEvents(0, 10, "Cidade Teste", "UF", new Date(), new Date());
+        List<EventSummary> result = eventServiceImpl.getFilteredEvents(0, 10, "Cidade Teste", "UF", startDate, endDate);
 
         assertFalse(result.isEmpty());
-        verify(repository, times(1)).findFilteredEvents(anyString(), anyString(), any(Date.class), any(Date.class), eq(pageable));
+        verify(repository, times(1)).findFilteredEvents("Cidade Teste", "UF", startDate, endDate, 0, 10);
     }
-
-    @Test
-    void test_shouldReturnUrlOnUploadImage() throws Exception {
-        MultipartFile multipartFile = mock(MultipartFile.class);
-        when(multipartFile.getBytes()).thenReturn(new byte[0]);
-        when(multipartFile.getOriginalFilename()).thenReturn("imagem.jpg");
-        when(s3Utilities.getUrl(any(GetUrlRequest.class))).thenReturn(URI.create("https://s3.amazonaws.com/teste/imagem.jpg").toURL());
-
-        ReflectionTestUtils.setField(eventServiceImpl, "bucketName", bucketName);
-        String result = ReflectionTestUtils.invokeMethod(eventServiceImpl, "uploadImg", multipartFile);
-
-        assertNotNull(result);
-        assertTrue(result.contains("https://s3.amazonaws.com"));
-    }
-    */
 }

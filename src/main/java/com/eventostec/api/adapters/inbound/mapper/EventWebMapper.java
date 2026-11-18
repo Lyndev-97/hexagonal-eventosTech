@@ -7,7 +7,7 @@ import com.eventostec.api.application.usecases.CreateEventCommand;
 import com.eventostec.api.application.usecases.EventDetails;
 import com.eventostec.api.domain.address.Address;
 import com.eventostec.api.domain.event.Event;
-import com.eventostec.api.domain.event.EventAddressProjection;
+import com.eventostec.api.domain.event.EventSummary;
 import com.eventostec.api.domain.image.ImageFile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,16 +41,16 @@ public class EventWebMapper {
         }
     }
 
-    public EventResponseDTO toResponse(EventAddressProjection e) {
-        return new EventResponseDTO(e.getId(),
-                                    e.getTitle(),
-                                    e.getDescription(),
-                                    e.getDate(),
-                                    e.getCity() != null ? e.getCity() : "",
-                                    e.getUf() != null ? e.getUf() : "",
-                                    e.getRemote(),
-                                    e.getEventUrl(),
-                                    e.getImgUrl());
+    public EventResponseDTO toResponse(EventSummary e) {
+        return new EventResponseDTO(e.id(),
+                                    e.title(),
+                                    e.description(),
+                                    e.date(),
+                                    e.city() != null ? e.city() : "",
+                                    e.uf() != null ? e.uf() : "",
+                                    e.remote(),
+                                    e.eventUrl(),
+                                    e.imgUrl());
     }
 
     public EventResponseDTO toCreatedResponse(Event event, String city, String uf) {

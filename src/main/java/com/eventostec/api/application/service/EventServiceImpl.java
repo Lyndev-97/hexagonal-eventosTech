@@ -5,9 +5,9 @@ import com.eventostec.api.application.usecases.*;
 import com.eventostec.api.domain.address.Address;
 import com.eventostec.api.domain.coupon.Coupon;
 import com.eventostec.api.domain.event.Event;
-import com.eventostec.api.domain.event.EventAddressProjection;
 import com.eventostec.api.domain.event.EventNotFoundException;
 import com.eventostec.api.domain.event.EventRepositoryPort;
+import com.eventostec.api.domain.event.EventSummary;
 import com.eventostec.api.domain.image.ImageUploaderPort;
 
 import java.util.Date;
@@ -61,7 +61,7 @@ public class EventServiceImpl implements EventUseCases {
         return saved;
     }
 
-    public List<EventAddressProjection> getUpcomingEvents(int page, int size) {
+    public List<EventSummary> getUpcomingEvents(int page, int size) {
 
         return repository.findUpcomingEvents(page, size);
 
@@ -101,7 +101,7 @@ public class EventServiceImpl implements EventUseCases {
 
     }
 
-    public List<EventAddressProjection> searchEvents(String title){
+    public List<EventSummary> searchEvents(String title){
         return repository.findEventsByTitle(title != null ? title : "");
         /*
         List<EventAddressProjection> eventsList = this.repository.findEventsByTitle(title);
@@ -120,7 +120,7 @@ public class EventServiceImpl implements EventUseCases {
         */
     }
 
-    public List<EventAddressProjection> getFilteredEvents(int page, int size, String city, String uf, Date startDate, Date endDate){
+    public List<EventSummary> getFilteredEvents(int page, int size, String city, String uf, Date startDate, Date endDate){
         city = (city != null) ? city : "";
         uf = (uf != null) ? uf : "";
         startDate = (startDate != null) ? startDate : new Date(0);

@@ -15,7 +15,7 @@ public interface EventRepositoryPort {
 
     void deleteById(UUID id);
 
-    List<EventAddressProjection> findUpcomingEvents(int page, int size);
-    List<EventAddressProjection> findFilteredEvents(String city, String uf, Date startDate, Date endDate, int page, int size);
-    List<EventAddressProjection> findEventsByTitle(String title);
+    List<EventSummary> findUpcomingEvents(int page, int size);
+    List<EventSummary> findFilteredEvents(String city, String uf, Date startDate, Date endDate, int page, int size);
+    List<EventSummary> findEventsByTitle(String title);
 }

@@ -10,7 +10,6 @@ import com.eventostec.api.application.usecases.EventUseCases;
 import com.eventostec.api.domain.address.AddressRepositoryPort;
 import com.eventostec.api.domain.coupon.CouponRepositoryPort;
 import com.eventostec.api.domain.event.EventRepositoryPort;
-import com.eventostec.api.utils.mappers.EventMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

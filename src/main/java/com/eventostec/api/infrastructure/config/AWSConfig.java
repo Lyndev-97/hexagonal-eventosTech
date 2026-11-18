@@ -21,8 +21,7 @@ public class AWSConfig {
 
     @Bean
     public S3Client createS3Instance() {
-        S3ClientBuilder s3ClientBuilder = S3Client.builder()
-                .region(Region.of(awsRegion));
+        S3ClientBuilder s3ClientBuilder = S3Client.builder().region(Region.of(awsRegion));
 
         if (accessKeyId != null && !accessKeyId.isEmpty() &&
                 secretAccessKey != null && !secretAccessKey.isEmpty()) {

@@ -1,6 +1,5 @@
-package com.eventostec.api.utils;
+package com.eventostec.api.adapters.inbound.exceptions;
 
-import com.eventostec.api.adapters.inbound.exceptions.ProblemDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.http.HttpStatus;

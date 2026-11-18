@@ -3,7 +3,6 @@ package com.eventostec.api.adapters.inbound.exceptions;
 import com.eventostec.api.application.InvalidAdminKeyException;
 import com.eventostec.api.domain.event.EventNotFoundException;
 import com.eventostec.api.domain.image.ImageUploadException;
-import com.eventostec.api.utils.ExceptionUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.dao.DataIntegrityViolationException;

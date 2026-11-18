@@ -4,7 +4,7 @@ import com.eventostec.api.adapters.outbound.entities.EventEntity;
 import com.eventostec.api.adapters.outbound.repositories.jpa.JpaEventRepository;
 import com.eventostec.api.adapters.outbound.repositories.mapper.PersistenceMapper;
 import com.eventostec.api.domain.event.Event;
-import com.eventostec.api.domain.event.EventAddressProjection;
+import com.eventostec.api.domain.event.EventSummary;
 import com.eventostec.api.domain.event.EventRepositoryPort;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
@@ -47,18 +47,22 @@ public class EventRepositoryPortImpl implements EventRepositoryPort {
     }
 
     @Override
-    public List<EventAddressProjection> findUpcomingEvents(int page, int size) {
-        return jpaEventRepository.findUpcomingEvents(new Date(), PageRequest.of(page, size)).getContent();
+    public List<EventSummary> findUpcomingEvents(int page, int size) {
+        return jpaEventRepository.findUpcomingEvents(new Date(), PageRequest.of(page, size))
+                .map(PersistenceMapper::toSummary)
+                .getContent();
     }
 
     @Override
-    public List<EventAddressProjection> findFilteredEvents(String city, String uf, Date startDate, Date endDate, int page, int size) {
-        return jpaEventRepository.findFilteredEvents(city, uf, startDate, endDate, PageRequest.of(page, size)).getContent();
+    public List<EventSummary> findFilteredEvents(String city, String uf, Date startDate, Date endDate, int page, int size) {
+        return jpaEventRepository.findFilteredEvents(city, uf, startDate, endDate, PageRequest.of(page, size))
+                .map(PersistenceMapper::toSummary)
+                .getContent();
     }
 
     @Override
-    public List<EventAddressProjection> findEventsByTitle(String title) {
-        return this.jpaEventRepository.findEventsByTitle(title);
+    public List<EventSummary> findEventsByTitle(String title) {
+        return this.jpaEventRepository.findEventsByTitle(title).stream().map(PersistenceMapper::toSummary).toList();
     }
 }
 
