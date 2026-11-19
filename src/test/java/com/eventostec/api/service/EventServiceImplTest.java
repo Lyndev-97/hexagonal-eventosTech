@@ -138,10 +138,21 @@ class EventServiceImplTest {
     @Test
     void test_shouldDeleteEvent() {
         UUID eventId = UUID.randomUUID();
+        Event event = new Event(eventId, "Evento Teste", "Descrição", "", "https://evento.com", true, new Date());
+        when(repository.findById(eventId)).thenReturn(Optional.of(event));
 
         eventServiceImpl.deleteEvent(eventId, adminKey);
 
         verify(repository, times(1)).deleteById(eventId);
+    }
+
+    @Test
+    void test_shouldThrowExceptionWhenDeletingNonExistentEvent() {
+        UUID eventId = UUID.randomUUID();
+        when(repository.findById(eventId)).thenReturn(Optional.empty());
+
+        assertThrows(EventNotFoundException.class, () -> eventServiceImpl.deleteEvent(eventId, adminKey));
+        verify(repository, never()).deleteById(any());
     }
 
     @Test
@@ -150,6 +161,7 @@ class EventServiceImplTest {
 
         assertThrows(InvalidAdminKeyException.class, () -> eventServiceImpl.deleteEvent(eventId, "wrong-key"));
         verify(repository, never()).deleteById(any());
+        verify(repository, never()).findById(any());
     }
 
     @Test

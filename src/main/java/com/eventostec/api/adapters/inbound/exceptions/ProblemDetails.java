@@ -1,21 +1,11 @@
 package com.eventostec.api.adapters.inbound.exceptions;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 /**
- * Based on RFC7807(<a href="https://datatracker.ietf.org/doc/html/rfc7807">Problem Details for HTTP APIs</a>)
+ * @param title    resumo curto e legível do tipo de problema (ex.: "Não encontrado")
+ * @param status   código de status HTTP numérico (ex.: 404), conforme a RFC7807
+ * @param error    nome textual do status HTTP (ex.: "NOT_FOUND")
+ * @param detail   explicação específica do problema ocorrido, voltada ao cliente da API
+ * @param instance URI da requisição que originou o erro
  */
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
-public class ProblemDetails {
-    private String title;
-    private Integer code;
-    private String status;
-    private String detail;
-    private String instance;
+public record ProblemDetails(String title, Integer status, String error, String detail, String instance) {
 }

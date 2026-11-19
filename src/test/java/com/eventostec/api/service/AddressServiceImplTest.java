@@ -1,7 +1,32 @@
 package com.eventostec.api.service;
 
+import com.eventostec.api.adapters.inbound.dto.EventRequestDTO;
+import com.eventostec.api.adapters.outbound.repositories.AddressRepositoryImpl;
+import com.eventostec.api.application.service.AddressServiceImpl;
+import com.eventostec.api.domain.address.Address;
+import com.eventostec.api.domain.event.Event;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+
 class AddressServiceImplTest {
-/*
+
     @Mock
     private AddressRepositoryImpl addressRepository;
 
@@ -25,7 +50,7 @@ class AddressServiceImplTest {
 
         when(addressRepository.save(any(Address.class))).thenReturn(address);
 
-        Address savedAddress = addressServiceImpl.createAddress(data, event);
+        Address savedAddress = addressServiceImpl.createAddress(address.getCity(), address.getUf(), event);
 
         assertNotNull(savedAddress);
         assertEquals(data.city(), savedAddress.getCity());
@@ -62,5 +87,5 @@ class AddressServiceImplTest {
         verify(addressRepository, times(1)).findByEventId(eventId);
     }
 
- */
+
 }

@@ -47,4 +47,15 @@ class CouponControllerTest {
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void test_shouldReturnBadRequestWhenValidIsNull() throws Exception {
+        UUID eventId = UUID.randomUUID();
+        CouponRequestDTO requestDTO = new CouponRequestDTO("CODE123", 10, null);
+
+        mockMvc.perform(post("/api/coupon/event/{eventId}", eventId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isBadRequest());
+    }
 }

@@ -7,6 +7,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface AddressUseCases {
-    public void createAddress(String city, String uf, Event event);
+    public Address createAddress(String city, String uf, Event event);
     public Optional<Address> findByEventId(UUID eventId);
 }

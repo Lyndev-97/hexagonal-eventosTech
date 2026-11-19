@@ -97,6 +97,9 @@ public class EventServiceImpl implements EventUseCases {
             throw new InvalidAdminKeyException();
         }
 
+        this.repository.findById(eventId)
+                .orElseThrow(() -> new EventNotFoundException(eventId));
+
         this.repository.deleteById(eventId);
 
     }

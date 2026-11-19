@@ -17,7 +17,7 @@ public class AddressServiceImpl implements AddressUseCases {
     }
 
     @Override
-    public void createAddress(String city, String uf, Event event) {
+    public Address createAddress(String city, String uf, Event event) {
         Address address = new Address();
         address.setCity(city);
         address.setUf(uf);
